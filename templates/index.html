@@ -1,0 +1,200 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media to Amazon Listing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #1557b0;
+        }
+
+        #loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .error {
+            color: #d93025;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        #result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .image-preview {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .image-preview img {
+            max-width: 200px;
+            height: auto;
+        }
+
+        .feature-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "•";
+            color: #1a73e8;
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Social Media to Amazon Listing Converter</h1>
+        
+        <form id="urlForm">
+            <div class="input-group">
+                <label for="url">Enter Social Media Post URL:</label>
+                <input type="url" id="url" name="url" required 
+                       placeholder="https://www.instagram.com/p/...">
+            </div>
+            <button type="submit">Generate Amazon Listing</button>
+        </form>
+
+        <div id="loader">
+            Converting... Please wait...
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div id="result">
+            <h2>Generated Amazon Listing</h2>
+            <div id="listingContent"></div>
+            <div class="image-preview" id="imagePreview"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loader = document.getElementById('loader');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const listingContent = document.getElementById('listingContent');
+            const imagePreview = document.getElementById('imagePreview');
+            
+            // Reset and show loader
+            loader.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('/process_url', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Parse the JSON string from GPT response
+                const listing = JSON.parse(data.data);
+                
+                // Display the results
+                listingContent.innerHTML = `
+                    <h3>${listing.title}</h3>
+                    <p><strong>Price:</strong> ${listing.price}</p>
+                    <h4>Description:</h4>
+                    <p>${listing.description}</p>
+                    <h4>Key Features:</h4>
+                    <ul class="feature-list">
+                        ${listing.features.map(feature => `<li>${feature}</li>`).join('')}
+                    </ul>
+                    <h4>Specifications:</h4>
+                    <ul class="feature-list">
+                        ${Object.entries(listing.specifications).map(([key, value]) => 
+                            `<li><strong>${key}:</strong> ${value}</li>`
+                        ).join('')}
+                    </ul>
+                `;
+                
+                // Display images if available
+                imagePreview.innerHTML = data.images
+                    .map(url => `<img src="${url}" alt="Product image">`)
+                    .join('');
+                
+                result.style.display = 'block';
+                
+            } catch (err) {
+                error.textContent = err.message || 'An error occurred. Please try again.';
+                error.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
