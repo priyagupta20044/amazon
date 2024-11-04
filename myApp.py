@@ -10,7 +10,13 @@ with open("output/results.txt", "w", encoding="utf-8") as file:
     
     # Write captions to the file
     for item in dataset_items.items:
+        file.write(f"Is Sponsored: {item.get('isSponsored')}\n")
+
+    for item in dataset_items.items:
         file.write(f"Caption: {item.get('caption')}\n")
+    
+    for item in dataset_items.items:
+        file.write(f"Image URL: {item.get('displayUrl')}\n")
     
     # Write alt texts from childPosts to the file
     for item in dataset_items.items:
